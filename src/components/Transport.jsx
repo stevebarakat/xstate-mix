@@ -1,12 +1,21 @@
 import { useEffect, useRef } from "react";
 import { Player, Channel, loaded, Destination, Transport as t } from "tone";
 import { useMachine } from "@xstate/react";
-import { createMachine } from "xstate";
+import { createMachine, assign } from "xstate";
+
+console.log(
+  assign({
+    volume: 100,
+  })
+);
 
 const transportMachine = createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QBcBOBDAdrADge1WQDoAbPdCAS0ygGIAZAeQEEARAUVYG0AGAXUSh8sSskp5MgkAE9EAJgAsPADQgAHvJ4A2IgHYtAVi1yDAX1Oq0WXAWJkKkWgAV6zAJoBJAHIBxXgKQQYVFxSUCNBDkeBSIFLR4ATgBmXQNVWQQkniSiHgMeXQAOAEYTc0sMbHxCIhwSdGlqOidmAFUAZU5-KWCxCSkIqK10xCTDcpArKtta9ABXWEcXd28-fh68ET6w0EHtPWzStJlEBTldIjMJzDwIOCkpm0INrdCBxABaBUKRhGKDOSXCaPap2chUGgvEL9cKIFQnSJKYGVJ5ghwQKHbd4IeEZFIxK4Vayg2r1RqQwK9N6wnG-fIJZHEmY4eaLDGUzbQnbqOG-LQKHJXcxAA */
   id: "transport",
   initial: "loading",
+  context: {
+    volume: 0,
+  },
   states: {
     loading: {
       on: { LOADED: "loaded" },
@@ -28,6 +37,7 @@ export const Transport = ({ song }) => {
   const [state, send] = useMachine(transportMachine);
   const players = useRef(null);
   const channels = useRef(null);
+  const { volume } = state.context;
 
   useEffect(() => {
     for (let i = 0; i < tracks.length; i++) {
@@ -96,6 +106,7 @@ export const Transport = ({ song }) => {
         </button>
         <button>FF</button>
       </div>
+      {volume}
     </div>
   );
 };
