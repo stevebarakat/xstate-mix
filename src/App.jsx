@@ -1,13 +1,13 @@
-import { useState } from "react";
 import { Transport } from "./components/Transport";
+import { roxanne } from "./songs/roxanne";
 import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0);
+const song = roxanne;
 
+function App() {
   return (
-    <div className="App">
-      <Transport />
+    <div>
+      <Transport song={song} />
     </div>
   );
 }

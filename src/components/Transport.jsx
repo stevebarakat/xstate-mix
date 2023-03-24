@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Player, loaded } from "tone";
+import { useEffect, useRef } from "react";
+import { Player, Channel, loaded, Destination, Transport as t } from "tone";
 import { useMachine } from "@xstate/react";
 import { createMachine } from "xstate";
 
@@ -23,34 +23,79 @@ const transportMachine = createMachine({
   },
 });
 
-export const Transport = () => {
+export const Transport = ({ song }) => {
+  const tracks = song.tracks;
   const [state, send] = useMachine(transportMachine);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const player = useRef(null);
-  console.log("loaded", loaded());
+  const players = useRef(null);
+  const channels = useRef(null);
 
   useEffect(() => {
-    player.current = new Player("/another-day.mp3");
+    for (let i = 0; i < tracks.length; i++) {
+      channels.current = channels.current && [
+        ...channels.current,
+        new Channel(),
+      ];
+      players.current = players.current && [
+        ...players.current,
+        new Player(tracks[i].path),
+      ];
+    }
+
+    // connect everything
+    players.current?.forEach((player, i) => {
+      channels.current &&
+        player.chain(channels.current[i], Destination).sync().start();
+    });
+
+    return () => {
+      t.stop();
+      players.current?.forEach((player, i) => {
+        player.disconnect();
+        channels.current && channels.current[i].disconnect();
+      });
+      players.current = [];
+      channels.current = [];
+    };
+  }, [tracks]);
+
+  useEffect(() => {
+    loaded().then(() => send("LOADED"));
   }, []);
-
-  useEffect(() => {
-    loaded().then(() => setIsLoaded(true));
-    send("LOADED");
-  }, [setIsLoaded]);
 
   console.log("state.value", state.value);
 
-  return (
-    <button
-      onClick={() => {
-        if (state.value === "loaded") {
-          send("PLAYING");
-        } else {
-          send("PAUSED");
-        }
-      }}
-    >
-      {state.value}
-    </button>
+  return state.value === "loading" ? (
+    "loading..."
+  ) : (
+    <div>
+      <div>{console.log("channels", channels.current)}</div>
+      <div>
+        {tracks.map((track, i) => {
+          return (
+            <div key={track.id}>
+              <input id={`track${i}`} type="range" />
+              <label htmlFor={`track${i}`}>{track.name}</label>
+            </div>
+          );
+        })}
+      </div>
+      <div className="transport-controls">
+        <button>REW</button>
+        <button
+          onClick={() => {
+            if (state.value === "loaded" || state.value === "paused") {
+              send("PLAYING");
+              t.start();
+            } else {
+              send("PAUSED");
+              t.stop();
+            }
+          }}
+        >
+          {state.value === "playing" ? "PAUSE" : "PLAY"}
+        </button>
+        <button>FF</button>
+      </div>
+    </div>
   );
 };
