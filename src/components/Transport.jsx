@@ -19,17 +19,28 @@ const transportMachine = createMachine({
       states: {
         playing: {
           on: {
-            PLAYING: "paused",
+            PAUSE: "paused",
           },
         },
         paused: {
           on: {
-            PAUSED: "playing",
+            PLAY: "playing",
+          },
+        },
+        rewinding: {
+          on: {
+            REWIND: "rewinding",
+          },
+        },
+        forwarding: {
+          on: {
+            FORWARDING: "forwarding",
           },
         },
       },
     },
   },
+  predictableActionArguments: true,
 });
 
 export const Transport = ({ song }) => {
@@ -50,7 +61,6 @@ export const Transport = ({ song }) => {
       ];
     }
 
-    // connect everything
     players.current?.forEach((player, i) => {
       channels.current &&
         player.chain(channels.current[i], Destination).sync().start();
@@ -71,9 +81,6 @@ export const Transport = ({ song }) => {
     loaded().then(() => send("LOADED"));
   }, []);
 
-  console.log("state.value", state.value);
-  console.log("state.value.loaded", state.value.loaded);
-
   return state.value === "loading" ? (
     "loading..."
   ) : (
@@ -82,30 +89,47 @@ export const Transport = ({ song }) => {
         {tracks.map((track, i) => {
           return (
             <div key={track.id}>
-              <input id={`track${i}`} type="range" />
+              <input
+                id={`track${i}`}
+                type="range"
+                onChange={(e) => console.log(e.target.value)}
+              />
               <label htmlFor={`track${i}`}>{track.name}</label>
             </div>
           );
         })}
       </div>
       <div className="transport-controls">
-        <button>REW</button>
         <button
           onClick={() => {
-            console.log("state.value.loaded", state.value.loaded);
+            send("REWIND");
+            t.seconds = t.seconds - 10;
+          }}
+        >
+          REW
+        </button>
+        <button
+          onClick={() => {
             if (state?.value?.loaded === "paused") {
-              send("PLAYING");
+              send("PLAY");
               t.start();
             }
             if (state?.value?.loaded === "playing") {
-              send("PAUSED");
+              send("PAUSE");
               t.stop();
             }
           }}
         >
           {state.value.loaded === "paused" ? "PLAY" : "PAUSE"}
         </button>
-        <button>FF</button>
+        <button
+          onClick={() => {
+            send("FORWARD");
+            t.seconds = t.seconds + 10;
+          }}
+        >
+          FF
+        </button>
       </div>
     </div>
   );
