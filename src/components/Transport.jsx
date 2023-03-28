@@ -128,9 +128,13 @@ export const Transport = ({ song }) => {
       <div className="transport-controls">
         <button
           onClick={() => {
-            send("STOP");
-            t.stop();
-            t.seconds = 0;
+            if (state?.matches({ loaded: "playing" })) {
+              send("PAUSE");
+              t.stop();
+              t.seconds = 0;
+            } else {
+              send("PLAY");
+            }
           }}
         >
           STOP
