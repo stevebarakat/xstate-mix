@@ -27,6 +27,11 @@ const transportMachine = createMachine({
             PLAY: "playing",
           },
         },
+        stopped: {
+          on: {
+            STOP: "stopped",
+          },
+        },
         rewinding: {
           on: {
             REWIND: "rewinding",
@@ -121,6 +126,15 @@ export const Transport = ({ song }) => {
         })}
       </div>
       <div className="transport-controls">
+        <button
+          onClick={() => {
+            send("STOP");
+            t.stop();
+            t.seconds = 0;
+          }}
+        >
+          STOP
+        </button>
         <button
           onClick={() => {
             send("REWIND");
