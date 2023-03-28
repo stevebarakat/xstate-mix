@@ -1,33 +1,33 @@
 import { useEffect, useRef } from "react";
 import { Player, Channel, loaded, Destination, Transport as t } from "tone";
 import { useMachine } from "@xstate/react";
-import { createMachine, assign } from "xstate";
-
-console.log(
-  assign({
-    volume: 100,
-  })
-);
+import { assign, createMachine } from "xstate";
 
 const transportMachine = createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QBcBOBDAdrADge1WQDoAbPdCAS0ygGIAZAeQEEARAUVYG0AGAXUSh8sSskp5MgkAE9EAJgAsPADQgAHvJ4A2IgHYtAVi1yDAX1Oq0WXAWJkKkWgAV6zAJoBJAHIBxXgKQQYVFxSUCNBDkeBSIFLR4ATgBmXQNVWQQkniSiHgMeXQAOAEYTc0sMbHxCIhwSdGlqOidmAFUAZU5-KWCxCSkIqK10xCTDcpArKtta9ABXWEcXd28-fh68ET6w0EHtPWzStJlEBTldIjMJzDwIOCkpm0INrdCBxABaBUKRhGKDOSXCaPap2chUGgvEL9cKIFQnSJKYGVJ5ghwQKHbd4IeEZFIxK4Vayg2r1RqQwK9N6wnG-fIJZHEmY4eaLDGUzbQnbqOG-LQKHJXcxAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QBcBOBDAdrADge1WQDoAbPdCAS0ygGIAZAeQEEARAUVYG0AGAXUSh8sSskp5MgkAA9EAWgAsRAEzKAbAFY1yjQBoQAT0QBmHsqIaAvpf1osuAsTIVIRHCXQHqdAAr1mAJoAkgByAOK8AkggwqLiktGyCMoA7EQAjOkp6QAcKXqGiBqZFta2GNj4hKTkEK446ACusJC0PswAqgDKnJFSsWISUklyAJzmOTnKOek6+kYIxemlZSCYeHXw0XaVjv14IoMJoCO5OUST07MFC+ka5lY2IDsO1c5UNPuH8cOIPPOIZQKHirF5VJy1SBfOJDRLydLAi5TGZzQoIYzaFblezgmouCBuDxeT7RAY-OHo5YpFLGBTGfIAhAKBSjUEVV4Q-FuJotCDQo6-BB3DJZXIMtEabIraxAA */
   id: "transport",
   initial: "loading",
-  context: {
-    volume: 0,
-  },
   states: {
     loading: {
-      on: { LOADED: "loaded" },
+      on: {
+        LOADED: "loaded",
+      },
     },
+
     loaded: {
-      on: { PLAYING: "playing" },
-    },
-    playing: {
-      on: { PAUSED: "paused" },
-    },
-    paused: {
-      on: { PLAYING: "playing" },
+      initial: "paused",
+      states: {
+        playing: {
+          on: {
+            PLAYING: "paused",
+          },
+        },
+        paused: {
+          on: {
+            PAUSED: "playing",
+          },
+        },
+      },
     },
   },
 });
@@ -37,7 +37,6 @@ export const Transport = ({ song }) => {
   const [state, send] = useMachine(transportMachine);
   const players = useRef(null);
   const channels = useRef(null);
-  const { volume } = state.context;
 
   useEffect(() => {
     for (let i = 0; i < tracks.length; i++) {
@@ -73,12 +72,12 @@ export const Transport = ({ song }) => {
   }, []);
 
   console.log("state.value", state.value);
+  console.log("state.value.loaded", state.value.loaded);
 
   return state.value === "loading" ? (
     "loading..."
   ) : (
     <div>
-      <div>{console.log("channels", channels.current)}</div>
       <div>
         {tracks.map((track, i) => {
           return (
@@ -93,20 +92,21 @@ export const Transport = ({ song }) => {
         <button>REW</button>
         <button
           onClick={() => {
-            if (state.value === "loaded" || state.value === "paused") {
+            console.log("state.value.loaded", state.value.loaded);
+            if (state?.value?.loaded === "paused") {
               send("PLAYING");
               t.start();
-            } else {
+            }
+            if (state?.value?.loaded === "playing") {
               send("PAUSED");
               t.stop();
             }
           }}
         >
-          {state.value === "playing" ? "PAUSE" : "PLAY"}
+          {state.value.loaded === "paused" ? "PLAY" : "PAUSE"}
         </button>
         <button>FF</button>
       </div>
-      {volume}
     </div>
   );
 };
