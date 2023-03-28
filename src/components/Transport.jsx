@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Player, Channel, loaded, Destination, Transport as t } from "tone";
+import { dBToPercent, transpose } from "../utils/scale";
 import { useMachine } from "@xstate/react";
 import { assign, createMachine } from "xstate";
 
@@ -81,6 +82,16 @@ export const Transport = ({ song }) => {
     loaded().then(() => send("LOADED"));
   }, []);
 
+  function changeVolume(e) {
+    const id = parseInt(e.target.id.at(-1));
+    console.log("id", id);
+    // console.log("value", parseFloat(value));
+    const value = parseFloat(e.target.value);
+    const transposed = transpose(value);
+    const scaled = dBToPercent(transposed);
+    channels.current[id].volume.value = scaled;
+  }
+
   return state.value === "loading" ? (
     "loading..."
   ) : (
@@ -92,7 +103,10 @@ export const Transport = ({ song }) => {
               <input
                 id={`track${i}`}
                 type="range"
-                onChange={(e) => console.log(e.target.value)}
+                min="-100"
+                max="12"
+                step="0.1"
+                onChange={changeVolume}
               />
               <label htmlFor={`track${i}`}>{track.name}</label>
             </div>
