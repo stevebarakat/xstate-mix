@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Player, Channel, loaded, Destination, Transport as t } from "tone";
-import { dBToPercent, transpose } from "../utils/scale";
+import { dBToPercent, scale } from "../utils/scale";
 import { useMachine } from "@xstate/react";
 import { assign, createMachine } from "xstate";
 
@@ -14,7 +14,6 @@ const transportMachine = createMachine({
         LOADED: "loaded",
       },
     },
-
     loaded: {
       initial: "paused",
       states: {
@@ -36,6 +35,11 @@ const transportMachine = createMachine({
         forwarding: {
           on: {
             FORWARDING: "forwarding",
+          },
+        },
+        changingVolume: {
+          on: {
+            CHANGE_VOLUME: "changingVolume",
           },
         },
       },
@@ -84,11 +88,8 @@ export const Transport = ({ song }) => {
 
   function changeVolume(e) {
     const id = parseInt(e.target.id.at(-1));
-    console.log("id", id);
-    // console.log("value", parseFloat(value));
     const value = parseFloat(e.target.value);
-    const transposed = transpose(value);
-    const scaled = dBToPercent(transposed);
+    const scaled = dBToPercent(scale(value));
     channels.current[id].volume.value = scaled;
   }
 
@@ -106,7 +107,13 @@ export const Transport = ({ song }) => {
                 min="-100"
                 max="12"
                 step="0.1"
-                onChange={changeVolume}
+                onChange={(e) => {
+                  send("CHANGE_VOLUME");
+                  const id = parseInt(e.target.id.at(-1));
+                  const value = parseFloat(e.target.value);
+                  const scaled = dBToPercent(scale(value));
+                  channels.current[id].volume.value = scaled;
+                }}
               />
               <label htmlFor={`track${i}`}>{track.name}</label>
             </div>
